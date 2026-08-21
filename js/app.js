@@ -200,7 +200,8 @@ const BONE_LINES = [
   ["hips", "hipR"], ["hipR", "kneeR"], ["kneeR", "footR"],
 ];
 
-function drawJoints() {
+/* activeKey: 잡거나 마우스를 올린 점 — 그 점을 따라다니는 신체 이름표를 그린다 */
+function drawJoints(activeKey) {
   const over = $("jointOverlay");
   const ctx = over.getContext("2d");
   ctx.clearRect(0, 0, over.width, over.height);
@@ -213,15 +214,36 @@ function drawJoints() {
   }
   for (const k of JOINT_NAMES) {
     const [x, y] = J[k];
-    ctx.beginPath(); ctx.arc(x, y, rBig, 0, 7);
+    const on = k === activeKey;
+    ctx.beginPath(); ctx.arc(x, y, on ? rBig * 1.3 : rBig, 0, 7);
     ctx.fillStyle = JOINT_COLORS[k]; ctx.fill();
-    ctx.lineWidth = 3; ctx.strokeStyle = "#fff"; ctx.stroke();
+    ctx.lineWidth = on ? 4 : 3; ctx.strokeStyle = "#fff"; ctx.stroke();
+  }
+  if (activeKey) {
+    const [x, y] = J[activeKey];
+    const label = JOINT_LABELS[activeKey] || activeKey;
+    const fs = Math.max(15, over.width * 0.032);
+    ctx.font = `700 ${fs}px Pretendard, "Malgun Gothic", sans-serif`;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const tw = ctx.measureText(label).width;
+    const bw = tw + fs * 1.2, bh = fs * 1.7;
+    /* 기본은 점 위쪽, 화면 위 끝이면 아래쪽에 표시 */
+    let bx = x, by = y - rBig * 2.2 - bh / 2;
+    if (by - bh / 2 < 2) by = y + rBig * 2.2 + bh / 2;
+    bx = Math.max(bw / 2 + 2, Math.min(over.width - bw / 2 - 2, bx));
+    ctx.fillStyle = "rgba(29,39,51,0.88)";
+    if (ctx.roundRect) {
+      ctx.beginPath(); ctx.roundRect(bx - bw / 2, by - bh / 2, bw, bh, bh / 3); ctx.fill();
+    } else ctx.fillRect(bx - bw / 2, by - bh / 2, bw, bh);
+    ctx.fillStyle = "#fff";
+    ctx.fillText(label, bx, by + 1);
+    ctx.textBaseline = "alphabetic";
   }
 }
 
 (function bindJointDrag() {
   const over = $("jointOverlay");
-  let dragKey = null;
+  let dragKey = null, hoverKey = null;
   function pick(ev) {
     const [x, y] = canvasPos(over, ev);
     const hit = Math.max(16, over.width * 0.035);
@@ -235,16 +257,29 @@ function drawJoints() {
   }
   over.addEventListener("pointerdown", (ev) => {
     dragKey = pick(ev);
-    if (dragKey) over.setPointerCapture(ev.pointerId);
+    if (dragKey) {
+      over.setPointerCapture(ev.pointerId);
+      drawJoints(dragKey); // 잡는 순간 이름표 표시
+    }
   });
   over.addEventListener("pointermove", (ev) => {
-    if (!dragKey) return;
-    const [x, y] = canvasPos(over, ev);
-    state.joints[dragKey] = [Math.max(0, Math.min(over.width, x)), Math.max(0, Math.min(over.height, y))];
-    drawJoints();
+    if (dragKey) {
+      const [x, y] = canvasPos(over, ev);
+      state.joints[dragKey] = [Math.max(0, Math.min(over.width, x)), Math.max(0, Math.min(over.height, y))];
+      drawJoints(dragKey); // 이름표가 점을 따라다닌다
+      return;
+    }
+    /* 드래그 중이 아니면: 마우스를 올려만 놓아도 이름표 미리 보기 */
+    const h = pick(ev);
+    if (h !== hoverKey) {
+      hoverKey = h;
+      over.style.cursor = h ? "grab" : "default";
+      drawJoints(hoverKey);
+    }
   });
-  over.addEventListener("pointerup", () => { dragKey = null; });
-  over.addEventListener("pointercancel", () => { dragKey = null; });
+  over.addEventListener("pointerup", () => { dragKey = null; drawJoints(hoverKey); });
+  over.addEventListener("pointercancel", () => { dragKey = null; drawJoints(); });
+  over.addEventListener("pointerleave", () => { if (!dragKey) { hoverKey = null; drawJoints(); } });
 })();
 
 $("resetJoints").addEventListener("click", () => {
