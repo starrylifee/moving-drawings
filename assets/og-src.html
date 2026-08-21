@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { width:1200px; height:630px; overflow:hidden;
+    font-family:"Pretendard","Malgun Gothic",sans-serif;
+    background:linear-gradient(160deg,#1d2733 0%,#2c3a4f 100%);
+    display:flex; align-items:center; justify-content:center; position:relative; }
+  .curtain { position:absolute; top:0; left:0; right:0; height:150px;
+    background:linear-gradient(#5b1220,#8c1d33);
+    border-radius:0 0 50% 50% / 0 0 60px 60px; }
+  .curtain::before { content:""; position:absolute; inset:0;
+    background:repeating-linear-gradient(90deg, transparent 0 60px, rgba(0,0,0,0.2) 60px 78px);
+    border-radius:inherit; }
+  .floor { position:absolute; bottom:0; left:0; right:0; height:120px; background:#6b4a2b; }
+  .floor::before { content:""; position:absolute; inset:0;
+    background:repeating-linear-gradient(90deg, transparent 0 130px, rgba(255,255,255,0.08) 130px 133px); }
+  .spot { position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+    width:900px; height:420px;
+    background:radial-gradient(ellipse at 50% 100%, rgba(255,240,190,0.28), transparent 65%); }
+  .wrap { position:relative; text-align:center; z-index:2; margin-top:30px; }
+  h1 { font-size:88px; font-weight:800; color:#fff; letter-spacing:-3px; margin-bottom:22px; }
+  h1 .mark { color:#ffd93d; }
+  p { font-size:36px; color:#cfd8e3; font-weight:600; }
+  .dancers { font-size:120px; letter-spacing:18px; margin-bottom:8px; }
+</style>
+</head>
+<body>
+  <div class="curtain"></div>
+  <div class="spot"></div>
+  <div class="floor"></div>
+  <div class="wrap">
+    <div class="dancers">🕺💃🤸</div>
+    <h1>움직이는 <span class="mark">그림 극장</span></h1>
+    <p>내가 그린 그림이 살아나서 춤을 춰요</p>
+  </div>
+</body>
+</html>

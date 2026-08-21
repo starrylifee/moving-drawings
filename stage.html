@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>선생님 무대 — 움직이는 그림 극장</title>
+<meta name="description" content="학생들이 저장한 캐릭터 파일을 모아 전자칠판 한 화면에서 다 같이 춤추게 하는 무대입니다.">
+<meta property="og:title" content="움직이는 그림 극장 — 선생님 무대">
+<meta property="og:description" content="우리 반 그림 캐릭터들이 한 무대에서 군무를 춰요!">
+<meta property="og:image" content="https://moving-drawings.vercel.app/assets/og.png">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="logo"><span class="mark">🎪</span>선생님 무대</div>
+  <div class="spacer"></div>
+  <a class="navlink" href="index.html">🎭 학생 화면으로</a>
+</header>
+
+<main class="stage-main">
+  <div class="stage-toolbar">
+    <button class="btn primary" id="btnLoad">📂 캐릭터 파일 불러오기</button>
+    <button class="btn" id="btnDemo">🖍️ 예시 친구들 추가</button>
+    <span class="sep"></span>
+    <select class="sel" id="selBg"></select>
+    <select class="sel" id="selMotion"></select>
+    <button class="btn" id="btnShuffle">🎲 제각각 춤추기</button>
+    <span class="sep"></span>
+    <button class="btn" id="btnPause">⏸️ 멈춤</button>
+    <button class="btn" id="btnRecord">⏺️ 녹화 (10초)</button>
+    <button class="btn ghost" id="btnClear">🗑️ 모두 내리기</button>
+    <div class="spacer" style="flex:1"></div>
+    <span class="count-chip" id="countChip">무대 위 0명</span>
+  </div>
+
+  <div class="stage-zone" id="stageZone">
+    <canvas id="stageCanvas" width="1920" height="1080"></canvas>
+    <div class="drop-hint" id="dropHint">
+      <div>🎭 학생들의 캐릭터 파일을 여기로 끌어다 놓으세요</div>
+      <div class="sub">학생 화면에서 저장한 「OO.캐릭터.json」 파일을 한꺼번에 여러 개 올릴 수 있어요.<br>클래스룸·패들렛으로 제출받은 파일을 모아 선택하면 됩니다.</div>
+    </div>
+  </div>
+</main>
+
+<div id="toast"></div>
+<input type="file" id="fileInput" accept=".json,application/json" multiple hidden>
+
+<script src="js/engine.js"></script>
+<script src="js/motions.js"></script>
+<script src="js/cutout.js"></script>
+<script src="js/stage.js"></script>
+</body>
+</html>

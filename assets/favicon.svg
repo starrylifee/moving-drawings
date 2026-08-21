@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#1d2733"/>
+  <!-- 무대 커튼 -->
+  <path d="M6 6h52v10c-8 4-18 6-26 6S14 20 6 16z" fill="#8c1d33"/>
+  <!-- 춤추는 그림 사람 -->
+  <circle cx="32" cy="27" r="8" fill="#ffd93d"/>
+  <circle cx="29.5" cy="26" r="1.4" fill="#1d2733"/>
+  <circle cx="34.5" cy="26" r="1.4" fill="#1d2733"/>
+  <path d="M29 30q3 2.4 6 0" stroke="#1d2733" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <path d="M32 35v10" stroke="#e8734a" stroke-width="4.6" stroke-linecap="round"/>
+  <path d="M32 38l-10-6M32 38l10-6" stroke="#e8734a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M32 45l-6 11M32 45l7 10" stroke="#e8734a" stroke-width="4" stroke-linecap="round"/>
+</svg>

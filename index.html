@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>움직이는 그림 극장 — 내가 그린 그림이 춤을 춰요</title>
+<meta name="description" content="종이에 그린 그림을 사진으로 찍어 올리면 춤추는 애니메이션이 됩니다. 서버 없이 브라우저 안에서만 동작해요.">
+<meta property="og:title" content="움직이는 그림 극장">
+<meta property="og:description" content="내가 그린 그림이 살아나서 춤을 춰요! 사진 올리고, 뼈대 붙이고, 재생!">
+<meta property="og:image" content="https://moving-drawings.vercel.app/assets/og.png">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="logo"><span class="mark">🎭</span>움직이는 그림 극장</div>
+  <div class="steps" id="steps">
+    <div class="step-chip" data-step="1"><span class="n">1</span>그림 준비</div>
+    <div class="step-chip" data-step="2"><span class="n">2</span>오려내기</div>
+    <div class="step-chip" data-step="3"><span class="n">3</span>뼈대 붙이기</div>
+    <div class="step-chip" data-step="4"><span class="n">4</span>살아났다!</div>
+  </div>
+  <div class="spacer"></div>
+  <a class="navlink" href="stage.html">🎪 선생님 무대</a>
+</header>
+
+<main>
+  <!-- 1단계: 그림 준비 -->
+  <section class="panel on" id="panel1">
+    <div class="start-wrap">
+      <div class="start-title">내가 그린 그림이 살아나서 움직여요!</div>
+      <div class="start-sub">흰 종이에 팔과 다리를 벌린 사람을 크게 그리고,<br>사진을 찍어 올려 보세요.</div>
+      <div class="start-cards">
+        <button class="big-card" id="btnUpload">
+          <span class="icon">📷</span>
+          <span class="t">그림 사진 올리기</span>
+          <span class="d">종이에 그린 그림을 찍은<br>사진 파일을 골라요</span>
+        </button>
+        <button class="big-card" id="btnSample">
+          <span class="icon">🖍️</span>
+          <span class="t">예시 그림으로 해보기</span>
+          <span class="d">아직 그림이 없다면<br>예시로 먼저 연습해요</span>
+        </button>
+      </div>
+      <div class="tips">
+        <div class="tip">✔ 흰 종이에 진하게</div>
+        <div class="tip">✔ 팔다리를 몸에서 떨어뜨려서</div>
+        <div class="tip">✔ 그림자 없이 밝게 찍기</div>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" hidden>
+    </div>
+  </section>
+
+  <!-- 2단계: 오려내기 -->
+  <section class="panel" id="panel2">
+    <div class="canvas-zone checker">
+      <canvas id="cutCanvas"></canvas>
+    </div>
+    <div class="side">
+      <div class="box">
+        <h3>✂️ 그림만 남기기</h3>
+        <p class="hint">종이 배경은 자동으로 지웠어요.<br>잘못 지워졌으면 브러시로 고쳐요.</p>
+      </div>
+      <div class="box">
+        <h3>배경 지우는 세기</h3>
+        <div class="slider-row">약한<input type="range" id="thrSlider" min="140" max="245" value="200">강함</div>
+      </div>
+      <div class="box">
+        <h3>브러시로 손질</h3>
+        <div class="mode-row">
+          <button class="btn" id="modeErase">🧽 지우기</button>
+          <button class="btn" id="modeRestore">🖌️ 살리기</button>
+        </div>
+        <div class="slider-row" style="margin-top:10px">작게<input type="range" id="brushSize" min="6" max="60" value="24">크게</div>
+      </div>
+      <div class="next-row">
+        <button class="btn primary block" id="toStep3">다음: 뼈대 붙이기 →</button>
+        <div class="enter-hint">Enter 키를 눌러도 넘어가요</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3단계: 뼈대 붙이기 -->
+  <section class="panel" id="panel3">
+    <div class="canvas-zone checker">
+      <div class="canvas-stack" id="jointStack">
+        <canvas id="jointBase"></canvas>
+        <canvas id="jointOverlay"></canvas>
+      </div>
+    </div>
+    <div class="side">
+      <div class="box">
+        <h3>🦴 뼈대 붙이기</h3>
+        <p class="hint">동그란 점을 <b>끌어서</b> 그림의 몸에 맞춰요.<br>머리 끝·어깨·팔꿈치·손·무릎·발 순서로 맞추면 쉬워요.</p>
+      </div>
+      <div class="box">
+        <h3>점 색깔 안내</h3>
+        <div class="joint-legend">
+          <span style="background:#ffe1d6">🟠 몸통·머리</span>
+          <span style="background:#d6e9ff">🔵 팔</span>
+          <span style="background:#d9f2e0">🟢 다리</span>
+        </div>
+      </div>
+      <button class="btn block" id="resetJoints">↺ 점 위치 처음으로</button>
+      <div class="next-row">
+        <button class="btn primary block" id="toStep4">다음: 움직이기! →</button>
+        <div class="enter-hint">Enter 키를 눌러도 넘어가요</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4단계: 살아났다 -->
+  <section class="panel" id="panel4">
+    <div class="canvas-zone" style="background:#111">
+      <canvas id="playCanvas" width="960" height="540"></canvas>
+    </div>
+    <div class="side">
+      <div class="box">
+        <h3>🎬 동작 고르기</h3>
+        <div class="motion-grid" id="motionGrid"></div>
+      </div>
+      <div class="box">
+        <h3>배경</h3>
+        <div class="bg-row" id="bgRow"></div>
+      </div>
+      <div class="box">
+        <h3>내 별명 (실명 금지!)</h3>
+        <input class="name-input" id="nameInput" maxlength="10" placeholder="예: 춤신춤왕">
+      </div>
+      <div class="next-row">
+        <button class="btn primary block" id="saveChar">🎪 무대용 캐릭터 파일 저장</button>
+        <button class="btn block" id="saveGif">🖼️ GIF로 저장</button>
+        <button class="btn block" id="saveWebm">🎥 동영상으로 저장</button>
+        <button class="btn ghost block" id="restart">↺ 새 그림으로 다시</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="toast"></div>
+<div id="busy"><div class="card"><div id="busyMsg">만드는 중...</div><div class="bar"><i id="busyBar"></i></div></div></div>
+
+<script src="js/gif.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/motions.js"></script>
+<script src="js/cutout.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
