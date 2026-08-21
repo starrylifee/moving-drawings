@@ -260,6 +260,16 @@ function createInstance(G, rig, opts) {
   };
 }
 
+/* 인스턴스가 잡은 GPU 자원 해제 — 다시 만들기·무대에서 내리기 시 반드시 호출 */
+function disposeInstance(G, inst) {
+  if (!inst) return;
+  const gl = G.gl;
+  gl.deleteTexture(inst.tex);
+  gl.deleteBuffer(inst.posBuf);
+  gl.deleteBuffer(inst.uvBuf);
+  gl.deleteBuffer(inst.idxBuf);
+}
+
 /* 한 프레임 그리기. instances 순서대로. timeSec: 초. */
 function renderFrame(G, canvas, instances, timeSec) {
   const gl = G.gl;

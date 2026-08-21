@@ -58,28 +58,32 @@ function autoMask(srcCanvas, brightness) {
   return mask;
 }
 
-/* 작은 연결 조각 제거 */
+/* 작은 연결 조각 제거 — 단, 가장 큰 조각(그림 본체)은 절대 지우지 않는다.
+ * 멀리서 찍어 그림이 아주 작아도 본체가 "먼지"로 삭제되는 사고 방지. */
 function removeSpecks(mask, w, h, minSize) {
   const n = w * h;
   const lab = new Int32Array(n).fill(-1);
   const stack = [];
+  const comps = []; // {members, count}
   for (let i = 0; i < n; i++) {
     if (!mask[i] || lab[i] >= 0) continue;
-    let count = 0;
     const members = [];
     stack.push(i); lab[i] = 1;
     while (stack.length) {
       const j = stack.pop();
-      members.push(j); count++;
+      members.push(j);
       const x = j % w, y = (j / w) | 0;
-      const nbs = [];
-      if (x > 0) nbs.push(j - 1);
-      if (x < w - 1) nbs.push(j + 1);
-      if (y > 0) nbs.push(j - w);
-      if (y < h - 1) nbs.push(j + w);
-      for (const k of nbs) if (mask[k] && lab[k] < 0) { lab[k] = 1; stack.push(k); }
+      if (x > 0 && mask[j - 1] && lab[j - 1] < 0) { lab[j - 1] = 1; stack.push(j - 1); }
+      if (x < w - 1 && mask[j + 1] && lab[j + 1] < 0) { lab[j + 1] = 1; stack.push(j + 1); }
+      if (y > 0 && mask[j - w] && lab[j - w] < 0) { lab[j - w] = 1; stack.push(j - w); }
+      if (y < h - 1 && mask[j + w] && lab[j + w] < 0) { lab[j + w] = 1; stack.push(j + w); }
     }
-    if (count < minSize) for (const j of members) mask[j] = 0;
+    comps.push(members);
+  }
+  const biggest = comps.reduce((a, b) => (b.length > a.length ? b : a), []);
+  for (const members of comps) {
+    if (members !== biggest && members.length < minSize)
+      for (const j of members) mask[j] = 0;
   }
 }
 
@@ -95,7 +99,8 @@ function paintMasked(srcCanvas, mask, outCanvas) {
   octx.putImageData(id, 0, 0);
 }
 
-/* 마스크 영역으로 잘라 최종 캐릭터 캔버스 만들기 (여백 포함) */
+/* 마스크 영역으로 잘라 최종 캐릭터 캔버스 만들기 (여백 포함)
+ * 반환: { canvas, x0, y0 } — x0,y0은 원본에서 잘라낸 시작 좌표(관절 좌표 변환용) */
 function cropCutout(srcCanvas, mask) {
   const w = srcCanvas.width, h = srcCanvas.height;
   let x0 = w, y0 = h, x1 = 0, y1 = 0, any = false;
@@ -117,7 +122,7 @@ function cropCutout(srcCanvas, mask) {
   const out = document.createElement("canvas");
   out.width = cw; out.height = ch;
   out.getContext("2d").drawImage(masked, x0, y0, cw, ch, 0, 0, cw, ch);
-  return out;
+  return { canvas: out, x0, y0 };
 }
 
 /* 브러시: cx,cy 중심 반지름 r을 지우기(0) 또는 살리기(1) */
@@ -226,6 +231,30 @@ const SAMPLE_JOINTS_RAW = {
   hipL: [287, 500], kneeL: [281, 618], footL: [272, 710],
   hipR: [353, 500], kneeR: [359, 618], footR: [368, 710],
 };
+
+/* 예시 캐릭터를 즉시 사용할 수 있게 만드는 공용 헬퍼 (무대 데모·튜토리얼용).
+ * 크롭 원점을 실제 값으로 반영해 관절이 정확히 맞는다. */
+function sampleCharacter(maxSide) {
+  const src = drawSampleCharacter();
+  const mask = autoMask(src, 200);
+  const { canvas: cut0, x0, y0 } = cropCutout(src, mask);
+  let cut = cut0, sc = 1;
+  if (maxSide && Math.max(cut0.width, cut0.height) > maxSide) {
+    sc = maxSide / Math.max(cut0.width, cut0.height);
+    cut = document.createElement("canvas");
+    cut.width = Math.round(cut0.width * sc);
+    cut.height = Math.round(cut0.height * sc);
+    cut.getContext("2d").drawImage(cut0, 0, 0, cut.width, cut.height);
+  }
+  const joints = {};
+  for (const k in SAMPLE_JOINTS_RAW) {
+    joints[k] = [
+      Math.max(0, Math.min(cut.width, (SAMPLE_JOINTS_RAW[k][0] - x0) * sc)),
+      Math.max(0, Math.min(cut.height, (SAMPLE_JOINTS_RAW[k][1] - y0) * sc)),
+    ];
+  }
+  return { canvas: cut, joints };
+}
 
 /* ---------- 캐릭터 파일 저장/불러오기 ---------- */
 const CHAR_FILE_VER = 1;

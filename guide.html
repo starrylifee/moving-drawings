@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>사용법 — 움직이는 그림 극장</title>
+<meta name="description" content="움직이는 그림 극장 사용법: 그림 그리기 → 사진 올리기 → 뼈대 붙이기 → 춤추기 → 선생님 무대 군무까지.">
+<meta property="og:title" content="움직이는 그림 극장 — 사용법">
+<meta property="og:description" content="내가 그린 그림을 춤추게 만드는 방법, 한 장씩 따라해 보세요.">
+<meta property="og:image" content="https://moving-drawings.vercel.app/assets/og.png">
+<meta property="og:url" content="https://moving-drawings.vercel.app/guide.html">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: #f6f4ef; color: #1d2733; line-height: 1.65;
+  }
+  header {
+    height: 64px; display: flex; align-items: center; gap: 18px;
+    padding: 0 22px; background: #1d2733; color: #fff;
+    position: sticky; top: 0; z-index: 10;
+  }
+  header .logo { font-size: 21px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+  header .spacer { flex: 1; }
+  header a.navlink {
+    color: #cfd8e3; text-decoration: none; font-size: 15px; font-weight: 600;
+    padding: 8px 14px; border-radius: 8px; border: 1px solid #46536b;
+  }
+  header a.navlink:hover { background: #2c3a4f; color: #fff; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 40px 24px 80px; }
+  .hero { text-align: center; margin-bottom: 46px; }
+  .hero h1 { font-size: 36px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; }
+  .hero p { font-size: 19px; color: #7a8494; }
+  .hero .cta {
+    display: inline-flex; gap: 12px; margin-top: 22px;
+  }
+  .hero .cta a {
+    display: inline-block; padding: 14px 26px; border-radius: 12px;
+    font-size: 18px; font-weight: 700; text-decoration: none;
+  }
+  .hero .cta a.main { background: #e8734a; color: #fff; }
+  .hero .cta a.sub { background: #fff; color: #1d2733; border: 2px solid #e3ded4; }
+
+  section { margin-bottom: 52px; }
+  h2 {
+    font-size: 25px; font-weight: 800; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  h2 .badge {
+    flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%;
+    background: #e8734a; color: #fff; font-size: 19px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .sub-desc { font-size: 17px; color: #7a8494; margin-bottom: 18px; }
+  .card {
+    background: #fff; border: 2px solid #e3ded4; border-radius: 18px;
+    padding: 24px; margin-bottom: 16px;
+  }
+  .card p, .card li { font-size: 17px; }
+  .card ul, .card ol { padding-left: 24px; }
+  .card li { margin: 6px 0; }
+  .shot {
+    width: 100%; border-radius: 14px; border: 2px solid #e3ded4;
+    display: block; margin: 14px 0 4px;
+  }
+  .caption { font-size: 15px; color: #7a8494; text-align: center; margin-bottom: 6px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 640px) { .two { grid-template-columns: 1fr; } }
+  .tip {
+    background: #fff7ee; border: 1px solid #f0ddc8; color: #8a6a48;
+    padding: 14px 18px; border-radius: 12px; font-size: 16px; font-weight: 600;
+    margin: 12px 0;
+  }
+  .warn {
+    background: #fdeeee; border: 1px solid #f0c8c8; color: #8a4848;
+    padding: 14px 18px; border-radius: 12px; font-size: 16px; font-weight: 600;
+    margin: 12px 0;
+  }
+  b.k { color: #c85a35; }
+  table { width: 100%; border-collapse: collapse; font-size: 16px; }
+  th, td { border: 1px solid #e3ded4; padding: 10px 14px; text-align: left; }
+  th { background: #f0ede6; }
+  footer { text-align: center; color: #a8b0bc; font-size: 14px; padding: 30px 0; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><span>📖</span>움직이는 그림 극장 · 사용법</div>
+  <div class="spacer"></div>
+  <a class="navlink" href="index.html">🎭 학생 화면</a>
+  <a class="navlink" href="stage.html">🎪 선생님 무대</a>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>내가 그린 그림이 춤을 춰요</h1>
+    <p>종이에 그린 그림을 사진으로 올리면 움직이는 애니메이션이 됩니다.<br>
+    설치도, 가입도 없습니다. 그림은 서버로 전송되지 않고 내 컴퓨터 안에서만 처리돼요.</p>
+    <div class="cta">
+      <a class="main" href="index.html">지금 해보기 →</a>
+      <a class="sub" href="stage.html">선생님 무대 열기</a>
+    </div>
+  </div>
+
+  <section>
+    <h2><span class="badge">✏️</span>준비: 그림은 이렇게 그려요</h2>
+    <p class="sub-desc">그림을 그리는 단계가 절반입니다. 아래 3가지만 지키면 훨씬 예쁘게 움직여요.</p>
+    <div class="card">
+      <ul>
+        <li><b class="k">흰 종이에 진한 색</b>으로 크게 그려요. (연한 연필 선은 지워질 수 있어요)</li>
+        <li><b class="k">만세 자세</b>처럼 팔과 다리를 몸에서 떨어뜨려 벌려 그려요. 팔이 몸에 붙어 있으면 몸이 같이 움직여요.</li>
+        <li>사진은 <b class="k">그림자 없이 밝게, 똑바로</b> 찍어요.</li>
+      </ul>
+      <div class="two">
+        <div>
+          <img class="shot" src="docs/사용법/00-예시그림-이렇게그려요.png" alt="추천 그림 예시 — 만세 자세로 팔다리를 벌린 그림">
+          <p class="caption">👍 이런 그림이 가장 예쁘게 움직여요 (만세 자세)</p>
+        </div>
+        <div>
+          <img class="shot" src="docs/사용법/01-시작화면.jpg" alt="시작 화면">
+          <p class="caption">시작 화면 — 그림이 없으면 「예시 그림으로 해보기」</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="badge">1</span>사진 올리기 &amp; 배경 지우기</h2>
+    <p class="sub-desc">「그림 사진 올리기」를 누르고 사진을 고르면, 종이 배경이 자동으로 지워집니다.</p>
+    <div class="card">
+      <img class="shot" src="docs/사용법/02-배경-자동제거.jpg" alt="배경이 자동으로 제거된 화면">
+      <p class="caption">체크무늬는 투명해진 부분이에요. 그림만 남으면 성공!</p>
+      <ul>
+        <li>그림 일부가 같이 지워졌으면 → <b class="k">🖌️ 살리기</b> 브러시로 그 부분을 칠해요.</li>
+        <li>배경이 덜 지워졌으면 → <b class="k">🧽 지우기</b> 브러시로 지우거나, 「배경 지우는 세기」를 <b>강함</b> 쪽으로 옮겨요.</li>
+        <li>다 되면 <b class="k">Enter</b> 키 또는 「다음」 버튼!</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="badge">2</span>뼈대 붙이기</h2>
+    <p class="sub-desc">동그란 점 16개를 끌어서 그림의 몸에 맞춰요. 여기가 가장 중요한 단계예요!</p>
+    <div class="card">
+      <img class="shot" src="docs/사용법/03-뼈대-붙이기.jpg" alt="관절 점을 그림에 맞게 배치한 화면">
+      <p class="caption">점을 다 맞춘 모습 — 🟠 몸통·머리 / 🔵 팔 / 🟢 다리</p>
+      <ul>
+        <li>순서 추천: <b class="k">머리 끝 → 어깨 → 팔꿈치 → 손 → 골반 → 무릎 → 발</b></li>
+        <li>손 점은 그림의 <b>손바닥 위에</b>, 발 점은 <b>신발 위에</b> 정확히 놓아요.</li>
+        <li>꼬였으면 「점 위치 처음으로」를 누르고 다시 하면 돼요.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="badge">3</span>살아났다! 동작 고르고 저장하기</h2>
+    <p class="sub-desc">9가지 동작과 6가지 배경을 바꿔 가며 놀아 보세요.</p>
+    <div class="card">
+      <div class="two">
+        <div>
+          <img class="shot" src="docs/사용법/04-완성-춤추기1.jpg" alt="완성된 캐릭터가 춤추는 화면 1">
+        </div>
+        <div>
+          <img class="shot" src="docs/사용법/05-완성-춤추기2.jpg" alt="완성된 캐릭터가 춤추는 화면 2">
+        </div>
+      </div>
+      <p class="caption">신나는 춤 · 디스코 · 만세 · 엉덩이춤 · 행진 · 달리기 · 점프 · 인사 · 체조</p>
+      <table>
+        <tr><th>저장 버튼</th><th>언제 쓰나요?</th></tr>
+        <tr><td>🎪 <b>무대용 캐릭터 파일 저장</b></td><td><b class="k">선생님께 제출할 때.</b> 이 파일이 있어야 우리 반 무대에 올라가요.</td></tr>
+        <tr><td>🖼️ GIF로 저장</td><td>움직이는 그림 파일. 카카오톡·발표 자료에 넣기 좋아요.</td></tr>
+        <tr><td>🎥 동영상으로 저장</td><td>화질 좋은 동영상(webm)이 필요할 때.</td></tr>
+      </table>
+      <div class="warn">🙅 별명 칸에는 <b>실명을 쓰지 않아요.</b> 「춤신춤왕」처럼 별명만!</div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="badge">🎪</span>선생님용: 우리 반 단체 무대 만들기</h2>
+    <p class="sub-desc">학생들의 캐릭터 파일을 모아 전자칠판 한 화면에서 다 같이 춤추게 합니다.</p>
+    <div class="card">
+      <img class="shot" src="docs/사용법/06-선생님무대-단체군무.jpg" alt="선생님 무대에서 여러 캐릭터가 함께 춤추는 화면">
+      <p class="caption">캐릭터마다 별명표가 붙고, 클릭하면 그 캐릭터만 동작이 바뀌어요</p>
+      <ol>
+        <li>학생들에게 <b class="k">「무대용 캐릭터 파일 저장」</b>으로 파일을 저장해 <b>클래스룸·패들렛 등으로 제출</b>하게 해요. (파일 이름: 별명.캐릭터.json)</li>
+        <li>제출된 파일을 한 폴더에 내려받아요.</li>
+        <li><a href="stage.html"><b>선생님 무대</b></a>를 열고 파일을 <b class="k">전부 선택해서 무대로 드래그</b>해요. (「캐릭터 파일 불러오기」 버튼도 돼요)</li>
+        <li>「🎲 제각각 춤추기」를 누르거나, 동작 드롭다운에서 동작 하나를 고르면 전원이 같은 동작으로 통일돼요. <b class="k">「⏺️ 녹화 (10초)」</b>로 영상을 남겨 학급 게시판에 공유해요. (공유 전 별명 노출이 걱정되면 「🏷️ 이름표 끄기」)</li>
+      </ol>
+      <div class="tip">💡 캐릭터를 <b>클릭</b>하면 그 캐릭터만 다음 동작으로 바뀌어요. 발표할 학생 캐릭터만 「인사」를 시켜 보세요. 잘못 올라온 캐릭터는 <b>우클릭</b>으로 한 명만 내릴 수 있어요.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="badge">❓</span>자주 묻는 질문</h2>
+    <div class="card">
+      <p><b>Q. 학생 그림이 인터넷에 올라가나요?</b><br>
+      아니요. 사진·캐릭터는 <b class="k">서버로 전송되지 않고</b> 각자 컴퓨터의 브라우저 안에서만 처리됩니다. 회원가입·로그인도 없습니다.</p>
+      <br>
+      <p><b>Q. 팔이나 어깨가 좀 찌그러져 보여요.</b><br>
+      팔이 몸에 붙어 있거나 관절 점이 어긋나면 그래요. 뼈대 단계에서 어깨·팔꿈치 점을 다시 맞추면 좋아지고, 처음부터 <b class="k">만세 자세</b>로 그리는 게 가장 좋아요.</p>
+      <br>
+      <p><b>Q. 어떤 기기에서 되나요?</b><br>
+      크롬북·PC·노트북의 <b class="k">크롬 브라우저</b> 기준으로 만들었어요. 화면이 가로로 넓은 기기(16:9)에 맞춰져 있어요.</p>
+      <br>
+      <p><b>Q. 사람이 아닌 그림(동물·로봇)도 되나요?</b><br>
+      팔 2개·다리 2개 모양이면 뭐든 돼요. 문어처럼 팔이 많으면 잘 안 맞아요.</p>
+    </div>
+  </section>
+
+  <footer>움직이는 그림 극장 · moving-drawings.vercel.app</footer>
+</div>
+</body>
+</html>

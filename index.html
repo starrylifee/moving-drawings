@@ -8,6 +8,7 @@
 <meta property="og:title" content="움직이는 그림 극장">
 <meta property="og:description" content="내가 그린 그림이 살아나서 춤을 춰요! 사진 올리고, 뼈대 붙이고, 재생!">
 <meta property="og:image" content="https://moving-drawings.vercel.app/assets/og.png">
+<meta property="og:url" content="https://moving-drawings.vercel.app/">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="styles.css">
@@ -22,7 +23,8 @@
     <div class="step-chip" data-step="4"><span class="n">4</span>살아났다!</div>
   </div>
   <div class="spacer"></div>
-  <a class="navlink" href="stage.html">🎪 선생님 무대</a>
+  <a class="navlink" href="#" id="btnTut">❓ 사용법</a>
+  <a class="navlink" href="stage.html" target="_blank" rel="noopener">🎪 선생님 무대</a>
 </header>
 
 <main>
@@ -76,6 +78,7 @@
       </div>
       <div class="next-row">
         <button class="btn primary block" id="toStep3">다음: 뼈대 붙이기 →</button>
+        <button class="btn ghost block btn-prev">← 이전 단계</button>
         <div class="enter-hint">Enter 키를 눌러도 넘어가요</div>
       </div>
     </div>
@@ -92,7 +95,7 @@
     <div class="side">
       <div class="box">
         <h3>🦴 뼈대 붙이기</h3>
-        <p class="hint">동그란 점을 <b>끌어서</b> 그림의 몸에 맞춰요.<br>머리 끝·어깨·팔꿈치·손·무릎·발 순서로 맞추면 쉬워요.</p>
+        <p class="hint">동그란 점을 <b>끌어서</b> 그림의 몸에 맞춰요.<br>머리 끝·어깨·팔꿈치·손·골반·무릎·발 순서로 맞추면 쉬워요.</p>
       </div>
       <div class="box">
         <h3>점 색깔 안내</h3>
@@ -105,6 +108,7 @@
       <button class="btn block" id="resetJoints">↺ 점 위치 처음으로</button>
       <div class="next-row">
         <button class="btn primary block" id="toStep4">다음: 움직이기! →</button>
+        <button class="btn ghost block btn-prev">← 이전 단계</button>
         <div class="enter-hint">Enter 키를 눌러도 넘어가요</div>
       </div>
     </div>
@@ -132,6 +136,7 @@
         <button class="btn primary block" id="saveChar">🎪 무대용 캐릭터 파일 저장</button>
         <button class="btn block" id="saveGif">🖼️ GIF로 저장</button>
         <button class="btn block" id="saveWebm">🎥 동영상으로 저장</button>
+        <button class="btn ghost block btn-prev">← 뼈대 다시 만지기</button>
         <button class="btn ghost block" id="restart">↺ 새 그림으로 다시</button>
       </div>
     </div>
@@ -141,10 +146,70 @@
 <div id="toast"></div>
 <div id="busy"><div class="card"><div id="busyMsg">만드는 중...</div><div class="bar"><i id="busyBar"></i></div></div></div>
 
+<!-- 사용법 튜토리얼 모달 -->
+<div id="tutModal">
+  <div class="tut-box">
+    <button class="tut-close" id="tutClose">✕</button>
+    <div class="tut-viewport">
+      <div class="tut-track" id="tutTrack">
+
+        <div class="tut-slide">
+          <div class="tut-emoji">🎭</div>
+          <h3>내가 그린 그림이 살아나요!</h3>
+          <p class="t-desc">종이에 그린 그림을 사진으로 올리면 이렇게 <b>춤추는 애니메이션</b>이 돼요.<br>지금 눈앞에서 움직이는 친구도 그림이랍니다!</p>
+          <div class="t-demo-wrap"><canvas id="tutDemo" width="480" height="270"></canvas></div>
+        </div>
+
+        <div class="tut-slide">
+          <span class="t-step">준비</span>
+          <h3>✏️ 그림은 만세 자세로!</h3>
+          <p class="t-desc">흰 종이에 <b>진한 색으로 크게</b>, 팔과 다리는 <b>몸에서 떨어뜨려</b> 벌려 그려요.<br>사진은 그림자 없이 밝게 찍어요.</p>
+          <img class="t-shot" src="docs/사용법/00-예시그림-이렇게그려요.png" alt="만세 자세로 그린 예시 그림">
+        </div>
+
+        <div class="tut-slide">
+          <span class="t-step">1단계</span>
+          <h3>📷 사진을 올리면 배경이 사라져요</h3>
+          <p class="t-desc">종이 배경은 자동으로 지워져요. 체크무늬가 된 곳이 지워진 부분!<br>그림이 같이 지워졌으면 <b>🖌️ 살리기</b>, 배경이 남았으면 <b>🧽 지우기</b> 브러시로 고쳐요.</p>
+          <img class="t-shot" src="docs/사용법/02-배경-자동제거.jpg" alt="배경 자동 제거 화면">
+        </div>
+
+        <div class="tut-slide">
+          <span class="t-step">2단계</span>
+          <h3>🦴 점을 끌어서 뼈대를 붙여요</h3>
+          <p class="t-desc">동그란 점 16개를 그림의 몸에 맞춰요. <b>머리 끝→어깨→팔꿈치→손→무릎→발</b> 순서로!<br>손 점은 손바닥 위에, 발 점은 신발 위에 정확히 놓을수록 예쁘게 움직여요.</p>
+          <img class="t-shot" src="docs/사용법/03-뼈대-붙이기.jpg" alt="뼈대 붙이기 화면">
+        </div>
+
+        <div class="tut-slide">
+          <span class="t-step">3단계</span>
+          <h3>🎬 동작을 골라 춤추게 해요</h3>
+          <p class="t-desc">9가지 동작과 6가지 배경을 바꿔 가며 놀아요.<br><b>🎪 무대용 캐릭터 파일</b>로 저장해 선생님께 내면 우리 반 무대에 올라가요! (별명만, 실명 금지)</p>
+          <img class="t-shot" src="docs/사용법/04-완성-춤추기1.jpg" alt="완성된 캐릭터가 춤추는 화면">
+        </div>
+
+        <div class="tut-slide">
+          <span class="t-step">선생님</span>
+          <h3>🎪 우리 반 단체 무대</h3>
+          <p class="t-desc">학생들이 낸 캐릭터 파일을 <b>선생님 무대</b>에 한꺼번에 드래그하면<br>전자칠판에서 다 같이 군무를 춰요. 캐릭터를 클릭하면 그 친구만 동작이 바뀌어요.</p>
+          <img class="t-shot" src="docs/사용법/06-선생님무대-단체군무.jpg" alt="선생님 무대 단체 군무 화면">
+        </div>
+
+      </div>
+    </div>
+    <div class="tut-nav">
+      <button class="btn" id="tutPrev">← 이전</button>
+      <div class="tut-dots" id="tutDots"></div>
+      <button class="btn primary" id="tutNext">다음 →</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/gif.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/motions.js"></script>
 <script src="js/cutout.js"></script>
 <script src="js/app.js"></script>
+<script src="js/tutorial.js"></script>
 </body>
 </html>

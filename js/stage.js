@@ -37,7 +37,7 @@ selBg.addEventListener("change", () => { stage.bgId = selBg.value; });
 const selMotion = $("selMotion");
 {
   const o0 = document.createElement("option");
-  o0.value = ""; o0.textContent = "동작: 모두 같이";
+  o0.value = ""; o0.textContent = "🎬 동작 고르기 (전원 통일)";
   selMotion.appendChild(o0);
   for (const id of MOTION_ORDER) {
     const o = document.createElement("option");
@@ -72,18 +72,30 @@ zone.addEventListener("drop", (e) => {
   addFiles([...e.dataTransfer.files]);
 });
 
+const loadedKeys = new Set(); // 중복 제출·중복 드래그 방지
+
 async function addFiles(files) {
-  let ok = 0, fail = 0;
+  let ok = 0, fail = 0, dup = 0;
+  let i = 0;
   for (const f of files) {
+    i++;
+    if (files.length > 3) $("countChip").textContent = `올라오는 중... ${i}/${files.length}`;
     try {
       const text = await f.text();
+      const key = (JSON.parse(text).name || "") + ":" + text.length;
+      if (loadedKeys.has(key)) { dup++; continue; }
       const { canvas, joints, name } = await parseCharacterJSON(text);
       addCharacter(canvas, joints, name);
+      loadedKeys.add(key);
       ok++;
     } catch (err) { fail++; }
   }
-  if (ok) toast(`${ok}명이 무대에 올라왔어요! 🎉` + (fail ? ` (${fail}개는 캐릭터 파일이 아니에요)` : ""));
-  else if (fail) toast("캐릭터 파일이 아니에요. 학생 화면에서 저장한 .캐릭터.json 파일을 올려 주세요.", 3400);
+  const parts = [];
+  if (ok) parts.push(`${ok}명이 무대에 올라왔어요! 🎉`);
+  if (dup) parts.push(`${dup}명은 이미 무대에 있어서 건너뛰었어요`);
+  if (fail) parts.push(`${fail}개는 캐릭터 파일이 아니에요`);
+  if (parts.length) toast(parts.join(" · "), 3400);
+  else toast("캐릭터 파일이 아니에요. 학생 화면에서 저장한 .캐릭터.json 파일을 올려 주세요.", 3400);
   relayout();
 }
 
@@ -97,20 +109,21 @@ function addCharacter(canvas, joints, name) {
   stage.chars.push({ inst, name: name || "" });
 }
 
+/* 캐릭터 한 명만 무대에서 내리기 (GPU 자원도 해제) */
+function removeCharacter(idx) {
+  const c = stage.chars[idx];
+  disposeInstance(stage.G, c.inst);
+  stage.chars.splice(idx, 1);
+  relayout();
+  toast((c.name || "친구") + "를 무대에서 내렸어요. (파일은 그대로 있어요)", 2600);
+}
+
 /* 예시 친구들 */
 $("btnDemo").addEventListener("click", () => {
-  const src = drawSampleCharacter();
-  const mask = autoMask(src, 200);
-  const cut = cropCutout(src, mask);
   const names = ["방방이", "댄스왕", "씰룩이"];
   for (let i = 0; i < 3; i++) {
-    const j = {};
-    const base = defaultJoints(cut.width, cut.height);
-    /* 예시 그림 관절 근사 매핑 */
-    const rx0 = 128, ry0 = 18, rw = 388, rh = 736;
-    for (const k in SAMPLE_JOINTS_RAW)
-      j[k] = [((SAMPLE_JOINTS_RAW[k][0] - rx0) / rw) * cut.width, ((SAMPLE_JOINTS_RAW[k][1] - ry0) / rh) * cut.height];
-    addCharacter(cut, Object.keys(j).length ? j : base, names[i]);
+    const { canvas, joints } = sampleCharacter(760);
+    addCharacter(canvas, joints, names[i]);
   }
   relayout();
   toast("예시 친구 3명이 올라왔어요!");
@@ -141,23 +154,39 @@ function relayout() {
   }
 }
 
-/* 캐릭터 클릭 → 그 캐릭터만 다음 동작으로 */
-$("stageCanvas").addEventListener("pointerdown", (ev) => {
+/* 무대 좌표에서 캐릭터 찾기 — 렌더 기준(발 중심 anchorX)과 같은 계산 사용 */
+function hitCharacter(ev) {
   const cv = $("stageCanvas");
   const r = cv.getBoundingClientRect();
   const x = ((ev.clientX - r.left) / r.width) * W;
   const y = ((ev.clientY - r.top) / r.height) * H;
   for (let i = stage.chars.length - 1; i >= 0; i--) {
     const c = stage.chars[i];
-    const w2 = (c.inst.rig.w * c.inst.scale) / 2;
-    const h = c.inst.rig.H * c.inst.scale;
-    if (x > c.inst.x - w2 && x < c.inst.x + w2 && y > c.inst.y - h && y < c.inst.y + h * 0.05) {
-      const cur = MOTION_ORDER.indexOf(c.inst.motionId);
-      c.inst.motionId = MOTION_ORDER[(cur + 1) % MOTION_ORDER.length];
-      toast((c.name || "친구") + ": " + MOTIONS[c.inst.motionId].emoji + " " + MOTIONS[c.inst.motionId].label, 1400);
-      return;
-    }
+    const s = c.inst.scale;
+    const left = c.inst.x - c.inst.rig.anchorX * s;
+    const top = c.inst.y - c.inst.rig.H * s;
+    if (x > left && x < left + c.inst.rig.w * s && y > top && y < c.inst.y + 10) return i;
   }
+  return -1;
+}
+
+/* 클릭 → 그 캐릭터만 다음 동작으로 */
+$("stageCanvas").addEventListener("pointerdown", (ev) => {
+  if (ev.button !== 0) return;
+  const i = hitCharacter(ev);
+  if (i < 0) return;
+  const c = stage.chars[i];
+  const cur = MOTION_ORDER.indexOf(c.inst.motionId);
+  c.inst.motionId = MOTION_ORDER[(cur + 1) % MOTION_ORDER.length];
+  toast((c.name || "친구") + ": " + MOTIONS[c.inst.motionId].emoji + " " + MOTIONS[c.inst.motionId].label, 1400);
+});
+
+/* 우클릭 → 그 캐릭터만 무대에서 내리기 */
+$("stageCanvas").addEventListener("contextmenu", (ev) => {
+  ev.preventDefault();
+  const i = hitCharacter(ev);
+  if (i < 0) return;
+  if (confirm((stage.chars[i].name || "이 친구") + "를 무대에서 내릴까요?")) removeCharacter(i);
 });
 
 /* ---------- 재생 ---------- */
@@ -171,8 +200,17 @@ $("btnPause").addEventListener("click", () => {
 $("btnClear").addEventListener("click", () => {
   if (!stage.chars.length) return;
   if (!confirm("무대 위 캐릭터를 모두 내릴까요? (파일은 그대로 있으니 다시 올릴 수 있어요)")) return;
+  for (const c of stage.chars) disposeInstance(stage.G, c.inst);
   stage.chars = [];
+  loadedKeys.clear();
   relayout();
+});
+
+/* 이름표 보이기/숨기기 — 녹화 공유 시 별명 노출을 끌 수 있게 */
+let namesVisible = true;
+$("btnNames").addEventListener("click", () => {
+  namesVisible = !namesVisible;
+  $("btnNames").textContent = namesVisible ? "🏷️ 이름표 끄기" : "🏷️ 이름표 켜기";
 });
 
 const ctx = $("stageCanvas").getContext("2d");
@@ -181,19 +219,23 @@ function frame(now) {
   drawBackground(ctx, W, H, stage.bgId);
   renderFrame(stage.G, stage.glCanvas, stage.chars.map((c) => c.inst), t);
   ctx.drawImage(stage.glCanvas, 0, 0);
-  /* 이름표 */
-  ctx.textAlign = "center";
-  ctx.font = "700 30px Pretendard, 'Malgun Gothic', sans-serif";
-  for (const c of stage.chars) {
-    if (!c.name) continue;
-    const x = c.inst.x, y = Math.min(H - 12, c.inst.y + 44);
-    ctx.fillStyle = "rgba(0,0,0,0.45)";
-    const tw = ctx.measureText(c.name).width;
-    ctx.beginPath();
-    ctx.roundRect(x - tw / 2 - 12, y - 30, tw + 24, 42, 12);
-    ctx.fill();
-    ctx.fillStyle = "#fff";
-    ctx.fillText(c.name, x, y);
+  /* 이름표 — 인원이 많으면 글자를 줄여 겹침을 막는다 */
+  if (namesVisible && stage.chars.length) {
+    const perRow = Math.ceil(stage.chars.length / (stage.chars.length <= 6 ? 1 : stage.chars.length <= 14 ? 2 : 3));
+    const fontPx = Math.max(16, Math.min(30, ((W / perRow) * 0.9) / 6));
+    ctx.textAlign = "center";
+    ctx.font = `700 ${fontPx}px Pretendard, 'Malgun Gothic', sans-serif`;
+    for (const c of stage.chars) {
+      if (!c.name) continue;
+      const x = c.inst.x, y = Math.min(H - 12, c.inst.y + fontPx * 1.5);
+      const tw = ctx.measureText(c.name).width;
+      const bx = x - tw / 2 - 10, by = y - fontPx, bw = tw + 20, bh = fontPx * 1.4;
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 10); ctx.fill(); }
+      else ctx.fillRect(bx, by, bw, bh);
+      ctx.fillStyle = "#fff";
+      ctx.fillText(c.name, x, y);
+    }
   }
   stage.raf = requestAnimationFrame(frame);
 }
@@ -202,10 +244,18 @@ stage.raf = requestAnimationFrame(frame);
 /* ---------- 녹화 ---------- */
 $("btnRecord").addEventListener("click", () => {
   if (!stage.chars.length) { toast("무대에 캐릭터가 없어요!"); return; }
+  /* 멈춤 상태로 녹화하면 정지화면만 찍히므로 자동으로 재생 */
+  if (stage.paused) $("btnPause").click();
+  let rec;
   const cv = $("stageCanvas");
-  const stream = cv.captureStream(30);
-  const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm";
-  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 9000000 });
+  try {
+    const stream = cv.captureStream(30);
+    const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm";
+    rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 9000000 });
+  } catch (e) {
+    toast("이 브라우저는 녹화를 지원하지 않아요.");
+    return;
+  }
   const chunks = [];
   rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
   rec.onstop = () => {

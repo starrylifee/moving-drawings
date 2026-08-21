@@ -64,17 +64,28 @@ $("btnSample").addEventListener("click", () => {
 let brushMode = null; // 'erase' | 'restore' | null
 
 function startCutStep() {
+  state.brushOps = [];       // 브러시 손질 기록 — 슬라이더를 움직여도 손질이 보존되게
+  state.thrPending = false;
   state.mask = autoMask(state.srcCanvas, +$("thrSlider").value);
   renderCutPreview();
   gotoStep(2);
+}
+
+/* 자동 마스크 재계산 + 브러시 손질 다시 적용 */
+function recomputeMask() {
+  state.mask = autoMask(state.srcCanvas, +$("thrSlider").value);
+  const w = state.srcCanvas.width, h = state.srcCanvas.height;
+  for (const op of state.brushOps) brushMask(state.mask, w, h, op[0], op[1], op[2], op[3]);
+  state.thrPending = false;
 }
 function renderCutPreview() {
   paintMasked(state.srcCanvas, state.mask, $("cutCanvas"));
 }
 $("thrSlider").addEventListener("input", () => {
   clearTimeout(state._thrTm);
+  state.thrPending = true;
   state._thrTm = setTimeout(() => {
-    state.mask = autoMask(state.srcCanvas, +$("thrSlider").value);
+    recomputeMask();
     renderCutPreview();
   }, 120);
 });
@@ -97,10 +108,19 @@ function canvasPos(canvas, ev) {
     if (!brushMode) return;
     const [x, y] = canvasPos(cv, ev);
     const r = +$("brushSize").value * (cv.width / cv.getBoundingClientRect().width);
-    brushMask(state.mask, state.srcCanvas.width, state.srcCanvas.height, x, y, r, brushMode === "restore" ? 1 : 0);
+    const val = brushMode === "restore" ? 1 : 0;
+    brushMask(state.mask, state.srcCanvas.width, state.srcCanvas.height, x, y, r, val);
+    state.brushOps.push([x, y, r, val]);
     renderCutPreview();
   }
-  cv.addEventListener("pointerdown", (ev) => { if (!brushMode) return; painting = true; cv.setPointerCapture(ev.pointerId); paint(ev); });
+  let noBrushHintShown = false;
+  cv.addEventListener("pointerdown", (ev) => {
+    if (!brushMode) {
+      if (!noBrushHintShown) { noBrushHintShown = true; toast("먼저 🧽 지우기나 🖌️ 살리기 버튼을 눌러 주세요!"); }
+      return;
+    }
+    painting = true; cv.setPointerCapture(ev.pointerId); paint(ev);
+  });
   cv.addEventListener("pointermove", (ev) => { if (painting) paint(ev); });
   cv.addEventListener("pointerup", () => { painting = false; });
   cv.addEventListener("pointercancel", () => { painting = false; });
@@ -116,41 +136,61 @@ const JOINT_COLORS = {
 };
 
 $("toStep3").addEventListener("click", () => {
-  const cut = cropCutout(state.srcCanvas, state.mask);
-  if (!cut) { toast("그림이 하나도 안 남았어요! 살리기 브러시로 그림을 칠해 주세요."); return; }
+  /* 슬라이더 디바운스가 대기 중이면 지금 즉시 반영 (미리보기와 결과가 어긋나지 않게) */
+  if (state.thrPending) { clearTimeout(state._thrTm); recomputeMask(); renderCutPreview(); }
+  const crop = cropCutout(state.srcCanvas, state.mask);
+  if (!crop) { toast("그림이 하나도 안 남았어요! 살리기 브러시로 그림을 칠해 주세요."); return; }
+  const cut = crop.canvas;
   /* 너무 크면 축소 (성능) */
+  let postScale = 1;
   if (Math.max(cut.width, cut.height) > 760) {
-    const sc = 760 / Math.max(cut.width, cut.height);
+    postScale = 760 / Math.max(cut.width, cut.height);
     const c2 = document.createElement("canvas");
-    c2.width = Math.round(cut.width * sc); c2.height = Math.round(cut.height * sc);
+    c2.width = Math.round(cut.width * postScale); c2.height = Math.round(cut.height * postScale);
     c2.getContext("2d").drawImage(cut, 0, 0, c2.width, c2.height);
     state.cutout = c2;
   } else state.cutout = cut;
+  state.cropInfo = { x0: crop.x0, y0: crop.y0, scale: postScale };
 
-  if (state.isSample) {
-    /* 예시 그림은 관절을 미리 맞춰 준다: 원본 좌표 → 잘라낸 좌표로 변환 */
-    state.joints = sampleJointsToCutout();
-  } else {
-    state.joints = defaultJoints(state.cutout.width, state.cutout.height);
-  }
+  if (state.isSample) state.joints = sampleJointsToCutout();
+  else state.joints = defaultJoints(state.cutout.width, state.cutout.height);
+
   const base = $("jointBase"), over = $("jointOverlay");
   base.width = over.width = state.cutout.width;
   base.height = over.height = state.cutout.height;
   base.getContext("2d").drawImage(state.cutout, 0, 0);
+  fitJointStack();
   drawJoints();
   gotoStep(3);
 });
 
+/* 예시 그림 관절: 실제 크롭 원점·축소 배율로 정확히 변환 */
 function sampleJointsToCutout() {
-  /* 예시 그림: 원본(640x800)에서 crop된 위치를 역산하기 어려우니, 잘라낸 캔버스 비율로 근사 */
+  const { x0, y0, scale } = state.cropInfo;
   const w = state.cutout.width, h = state.cutout.height;
-  const raw = SAMPLE_JOINTS_RAW;
-  /* 원본에서 그림 영역 대략 (130,20)-(510,760) → 비율 매핑 */
-  const rx0 = 128, ry0 = 18, rw = 388, rh = 736;
   const j = {};
-  for (const k in raw) j[k] = [((raw[k][0] - rx0) / rw) * w, ((raw[k][1] - ry0) / rh) * h];
+  for (const k in SAMPLE_JOINTS_RAW) {
+    j[k] = [
+      Math.max(0, Math.min(w, (SAMPLE_JOINTS_RAW[k][0] - x0) * scale)),
+      Math.max(0, Math.min(h, (SAMPLE_JOINTS_RAW[k][1] - y0) * scale)),
+    ];
+  }
   return j;
 }
+
+/* 3단계 캔버스를 작업 영역 안에 딱 맞게 축소 표시 (세로 긴 그림이 잘리지 않게) */
+function fitJointStack() {
+  const zone = $("jointStack").parentElement;
+  const stack = $("jointStack");
+  const base = $("jointBase"), over = $("jointOverlay");
+  const zw = zone.clientWidth - 8, zh = zone.clientHeight - 8;
+  if (zw <= 0 || zh <= 0) return;
+  const sc = Math.min(1, zw / base.width, zh / base.height);
+  const cw = Math.round(base.width * sc), ch = Math.round(base.height * sc);
+  stack.style.width = cw + "px"; stack.style.height = ch + "px";
+  for (const c of [base, over]) { c.style.width = cw + "px"; c.style.height = ch + "px"; }
+}
+window.addEventListener("resize", () => { if (state.step === 3) fitJointStack(); });
 
 const BONE_LINES = [
   ["hips", "chest"], ["chest", "neck"], ["neck", "head"],
@@ -224,11 +264,13 @@ $("toStep4").addEventListener("click", () => {
 
 function buildPlayer() {
   state.rig = buildRig(state.cutout, state.joints);
-  if (!state.glCanvas) {
-    state.glCanvas = document.createElement("canvas");
-    state.glCanvas.width = 960; state.glCanvas.height = 540;
-    state.G = createGL(state.glCanvas);
+  if (!state.G) {
+    const c = document.createElement("canvas");
+    c.width = 960; c.height = 540;
+    state.G = createGL(c);      // 실패하면 여기서 던지고 아래는 실행 안 됨
+    state.glCanvas = c;
   }
+  if (state.inst) disposeInstance(state.G, state.inst); // 이전 캐릭터 GPU 자원 해제
   state.inst = createInstance(state.G, state.rig, {
     x: 480, y: 500, scale: (540 * 0.74) / state.rig.H,
     motionId: state.motionId,
@@ -236,6 +278,7 @@ function buildPlayer() {
   buildMotionButtons();
   buildBgButtons();
   startLoop();
+  setTimeout(() => $("nameInput").focus(), 50);
 }
 
 function startLoop() {
@@ -293,6 +336,12 @@ function safeName() {
 }
 
 $("saveChar").addEventListener("click", () => {
+  const n = ($("nameInput").value || "").trim();
+  if (!n) {
+    toast("별명을 먼저 지어 볼까요? (실명 말고 별명!)");
+    $("nameInput").focus();
+    return;
+  }
   const json = characterToJSON(state.cutout, state.joints, safeName());
   downloadBlob(new Blob([json], { type: "application/json" }), safeName() + ".캐릭터.json");
   toast("저장했어요! 이 파일을 선생님께 내면 무대에 함께 올라가요 🎪", 3600);
@@ -302,35 +351,50 @@ $("saveGif").addEventListener("click", async () => {
   const m = MOTIONS[state.motionId];
   const fps = 15, frames = Math.round(m.period * fps);
   const W = 640, H = 360;
-  const comp = document.createElement("canvas");
-  comp.width = W; comp.height = H;
-  const cctx = comp.getContext("2d");
-  const gif = new GIF({ workers: 2, quality: 8, width: W, height: H, workerScript: "js/gif.worker.js" });
-  busy("GIF 만드는 중...", 5);
-  for (let i = 0; i < frames; i++) {
-    const t = (i / fps);
-    drawBackground(cctx, W, H, state.bgId === "white" ? "white" : state.bgId);
-    renderFrame(state.G, state.glCanvas, [state.inst], t);
-    cctx.drawImage(state.glCanvas, 0, 0, W, H);
-    gif.addFrame(comp, { copy: true, delay: 1000 / fps });
-    busy("GIF 만드는 중...", 5 + (i / frames) * 45);
-    await new Promise((r) => setTimeout(r, 0));
-  }
-  gif.on("progress", (p) => busy("GIF 굽는 중...", 50 + p * 50));
-  gif.on("finished", (blob) => {
+  /* 어떤 이유로든 실패하면 오버레이가 영영 안 닫히는 일이 없게 안전장치 */
+  const safety = setTimeout(() => { busy(null); toast("GIF 만들기가 너무 오래 걸려요. 다시 시도해 주세요."); }, 60000);
+  try {
+    const comp = document.createElement("canvas");
+    comp.width = W; comp.height = H;
+    const cctx = comp.getContext("2d");
+    const gif = new GIF({ workers: 2, quality: 8, width: W, height: H, workerScript: "js/gif.worker.js" });
+    busy("GIF 만드는 중...", 5);
+    for (let i = 0; i < frames; i++) {
+      const t = (i / fps);
+      drawBackground(cctx, W, H, state.bgId);
+      renderFrame(state.G, state.glCanvas, [state.inst], t);
+      cctx.drawImage(state.glCanvas, 0, 0, W, H);
+      gif.addFrame(comp, { copy: true, delay: 1000 / fps });
+      busy("GIF 만드는 중...", 5 + (i / frames) * 45);
+      await new Promise((r) => setTimeout(r, 0));
+    }
+    gif.on("progress", (p) => busy("GIF 굽는 중...", 50 + p * 50));
+    gif.on("finished", (blob) => {
+      clearTimeout(safety);
+      busy(null);
+      downloadBlob(blob, safeName() + "_" + m.label + ".gif");
+      toast("GIF를 저장했어요! 🖼️");
+      startLoop();
+    });
+    gif.render();
+  } catch (e) {
+    clearTimeout(safety);
     busy(null);
-    downloadBlob(blob, safeName() + "_" + m.label + ".gif");
-    toast("GIF를 저장했어요! 🖼️");
-    startLoop();
-  });
-  gif.render();
+    toast("GIF 만들기에 실패했어요. 다시 시도해 주세요.");
+  }
 });
 
 $("saveWebm").addEventListener("click", () => {
-  const play = $("playCanvas");
-  const stream = play.captureStream(30);
-  const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm";
-  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 5000000 });
+  let rec;
+  try {
+    const play = $("playCanvas");
+    const stream = play.captureStream(30);
+    const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm";
+    rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 5000000 });
+  } catch (e) {
+    toast("이 브라우저는 동영상 저장을 지원하지 않아요. GIF 저장을 써 주세요.");
+    return;
+  }
   const chunks = [];
   rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
   rec.onstop = () => {
@@ -349,11 +413,29 @@ $("restart").addEventListener("click", () => {
   gotoStep(1);
 });
 
+/* ---------- 이전 단계로 ---------- */
+document.querySelectorAll(".btn-prev").forEach((b) =>
+  b.addEventListener("click", () => gotoStep(state.step - 1)));
+
+/* 지나온 단계 칩을 누르면 그 단계로 되돌아갈 수 있다 */
+document.querySelectorAll(".step-chip").forEach((el) =>
+  el.addEventListener("click", () => {
+    const s = +el.dataset.step;
+    if (s < state.step) gotoStep(s);
+  }));
+
+/* 작업 중 실수로 나가는 것 방지 */
+window.addEventListener("beforeunload", (e) => {
+  if (state.step > 1) { e.preventDefault(); e.returnValue = ""; }
+});
+
 gotoStep(1);
 
 /* ---------- 엔터로 진행 ---------- */
 document.addEventListener("keydown", (e) => {
-  if (e.key !== "Enter" || e.target.tagName === "INPUT") return;
+  if (e.key !== "Enter") return;
+  /* 입력칸·버튼에 포커스가 있으면 건드리지 않는다 (버튼 클릭과 이중 동작 방지) */
+  if (e.target.tagName === "INPUT" || e.target.tagName === "BUTTON" || e.target.tagName === "A") return;
   if (state.step === 2) $("toStep3").click();
   else if (state.step === 3) $("toStep4").click();
 });
